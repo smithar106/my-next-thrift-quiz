@@ -1,0 +1,240 @@
+'use client'
+
+import { useState, useCallback } from 'react'
+import QuizStep from '@/components/QuizStep'
+import ArchetypeResult from '@/components/ArchetypeResult'
+import { ARCHETYPES, type ArchetypeKey } from '@/lib/archetypes'
+
+// ─── Quiz questions ───────────────────────────────────────────────────────────
+
+interface Option {
+  label: string
+  value: string
+}
+
+interface Question {
+  id: number
+  heading: string
+  subheading?: string
+  layout: 'chips' | 'two-cards' | 'four-cards'
+  options: Option[]
+}
+
+const QUESTIONS: Question[] = [
+  {
+    id: 1,
+    heading: 'What kind of treasure hunter is your style?',
+    layout: 'chips',
+    options: [
+      { label: '🗝️ Archive Hunter', value: 'archive-hunter' },
+      { label: '🎒 Streetwear Scavenger', value: 'streetwear-scavenger' },
+      { label: '🧥 Quiet Luxury Thrifter', value: 'quiet-luxury' },
+      { label: '🧳 Eclectic Curator', value: 'eclectic-curator' },
+      { label: '💎 Hidden Gem Collector', value: 'hidden-gem' },
+      { label: '🧭 Downtown Treasure Hunter', value: 'downtown-treasure' },
+      { label: '🪞 Romantic Relic Finder', value: 'romantic-relic' },
+      { label: '🪙 Designer Score Seeker', value: 'designer-score' },
+      { label: '🏷️ Off-Duty Scavenger', value: 'off-duty-scavenger' },
+      { label: '📐 The Sharp Archive', value: 'sharp-archive' },
+    ],
+  },
+  {
+    id: 2,
+    heading: 'What material stops you in your tracks?',
+    layout: 'two-cards',
+    options: [
+      { label: '🤎 Leather, denim & worn texture', value: 'raw' },
+      { label: '✨ Silk, cashmere & natural fibres', value: 'refined' },
+    ],
+  },
+  {
+    id: 3,
+    heading: 'What palette pulls your eye?',
+    layout: 'two-cards',
+    options: [
+      { label: '🖤 Neutrals, earth & dark tones', value: 'dark' },
+      { label: '🌸 Colour, pastels & prints', value: 'light' },
+    ],
+  },
+  {
+    id: 4,
+    heading: 'What kind of score are you hunting?',
+    layout: 'two-cards',
+    options: [
+      { label: '💰 Everyday thrift finds', value: 'everyday' },
+      { label: '🪙 Luxury resale & designer scores', value: 'luxury' },
+    ],
+  },
+  {
+    id: 5,
+    heading: 'What are you hunting for right now?',
+    layout: 'four-cards',
+    options: [
+      { label: "🗝️ A piece I'll wear forever", value: 'forever' },
+      { label: '💎 Hidden gems under $50', value: 'budget' },
+      { label: '🏷️ Rare vintage or deadstock', value: 'vintage' },
+      { label: '🪙 A designer score', value: 'designer' },
+    ],
+  },
+]
+
+// ─── Quiz answers state ───────────────────────────────────────────────────────
+
+interface Answers {
+  step1?: ArchetypeKey
+  step2?: string
+  step3?: string
+  step4?: string
+  step5?: string
+}
+
+// ─── Page component ───────────────────────────────────────────────────────────
+
+export default function QuizPage() {
+  const [currentStep, setCurrentStep] = useState(0) // 0 = intro, 1-5 = questions, 6 = result
+  const [answers, setAnswers] = useState<Answers>({})
+  const [transitionKey, setTransitionKey] = useState(0)
+
+  const totalSteps = 5
+
+  const handleAnswer = useCallback(
+    (value: string) => {
+      const stepKey = `step${currentStep}` as keyof Answers
+
+      setAnswers((prev) => ({
+        ...prev,
+        [stepKey]: value,
+      }))
+
+      // Advance to next step with animation
+      setTimeout(() => {
+        setTransitionKey((k) => k + 1)
+        if (currentStep < totalSteps) {
+          setCurrentStep((s) => s + 1)
+        } else {
+          setCurrentStep(6) // result
+        }
+      }, 120)
+    },
+    [currentStep, totalSteps]
+  )
+
+  const handleStart = useCallback(() => {
+    setTransitionKey((k) => k + 1)
+    setCurrentStep(1)
+  }, [])
+
+  const handleRetake = useCallback(() => {
+    setAnswers({})
+    setTransitionKey((k) => k + 1)
+    setCurrentStep(0)
+  }, [])
+
+  const archetype = answers.step1 ? ARCHETYPES[answers.step1] : null
+
+  const progress =
+    currentStep > 0 && currentStep <= totalSteps
+      ? (currentStep - 1) / totalSteps
+      : currentStep > totalSteps
+      ? 1
+      : 0
+
+  // ── Intro screen ──
+  if (currentStep === 0) {
+    return (
+      <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-4 py-12">
+        <div
+          key={transitionKey}
+          className="step-enter w-full max-w-[480px] flex flex-col items-center text-center gap-6"
+        >
+          {/* Logo mark */}
+          <div className="w-14 h-14 rounded-2xl bg-[#00AB4E]/15 border border-[#00AB4E]/30 flex items-center justify-center text-2xl">
+            🛍️
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <p className="text-sm font-medium tracking-widest uppercase text-[#00AB4E]">
+              My Next Thrift
+            </p>
+            <h1 className="text-3xl font-bold text-white leading-tight">
+              Find your thrift
+              <br />
+              archetype
+            </h1>
+            <p className="text-[#999] text-base leading-relaxed max-w-[340px] mx-auto">
+              5 quick questions. One identity. The secondhand pieces that belong to you.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2 w-full max-w-[320px]">
+            <div className="flex items-center gap-3 text-sm text-[#DDD]">
+              <span className="w-5 h-5 rounded-full bg-[#00AB4E]/15 border border-[#00AB4E]/40 flex items-center justify-center text-xs text-[#00AB4E]">
+                ✓
+              </span>
+              5 steps, under 60 seconds
+            </div>
+            <div className="flex items-center gap-3 text-sm text-[#DDD]">
+              <span className="w-5 h-5 rounded-full bg-[#00AB4E]/15 border border-[#00AB4E]/40 flex items-center justify-center text-xs text-[#00AB4E]">
+                ✓
+              </span>
+              10 distinct thrift archetypes
+            </div>
+            <div className="flex items-center gap-3 text-sm text-[#DDD]">
+              <span className="w-5 h-5 rounded-full bg-[#00AB4E]/15 border border-[#00AB4E]/40 flex items-center justify-center text-xs text-[#00AB4E]">
+                ✓
+              </span>
+              Curated pieces matched to your eye
+            </div>
+          </div>
+
+          <button
+            onClick={handleStart}
+            className="cta-pulse w-full max-w-[320px] py-4 px-6 rounded-2xl bg-[#00AB4E] text-white font-semibold text-base tracking-wide hover:bg-[#00AB4E]/90 active:scale-[0.97] transition-transform"
+          >
+            Start the quiz →
+          </button>
+
+          <p className="text-xs text-[#555]">Free · No sign-up required</p>
+        </div>
+      </main>
+    )
+  }
+
+  // ── Result screen ──
+  if (currentStep === 6 && archetype) {
+    return (
+      <ArchetypeResult
+        archetype={archetype}
+        onRetake={handleRetake}
+        transitionKey={transitionKey}
+      />
+    )
+  }
+
+  // ── Quiz steps 1–5 ──
+  const question = QUESTIONS[currentStep - 1]
+  if (!question) return null
+
+  return (
+    <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center px-4 py-8">
+      {/* Progress bar */}
+      <div className="w-full max-w-[480px] mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium text-[#00AB4E] tracking-wide uppercase">
+            Step {currentStep} of {totalSteps}
+          </span>
+          <span className="text-xs text-[#555]">{Math.round(progress * 100)}% complete</span>
+        </div>
+        <div className="w-full h-[3px] bg-white/5 rounded-full overflow-hidden">
+          <div
+            className="progress-bar h-full bg-[#00AB4E] rounded-full"
+            style={{ width: `${progress * 100}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Question */}
+      <QuizStep key={transitionKey} question={question} onAnswer={handleAnswer} />
+    </main>
+  )
+}
