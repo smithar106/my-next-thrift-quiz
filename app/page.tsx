@@ -2,8 +2,10 @@
 
 import { useState, useCallback } from 'react'
 import QuizStep from '@/components/QuizStep'
+import EmailCapture from '@/components/EmailCapture'
 import ArchetypeResult from '@/components/ArchetypeResult'
 import { ARCHETYPES, type ArchetypeKey } from '@/lib/archetypes'
+import { getCanonicalId, getDominantSignals } from '@/lib/handoff'
 
 // ─── Quiz questions ───────────────────────────────────────────────────────────
 
@@ -91,9 +93,16 @@ interface Answers {
 // ─── Page component ───────────────────────────────────────────────────────────
 
 export default function QuizPage() {
-  const [currentStep, setCurrentStep] = useState(0) // 0 = intro, 1-5 = questions, 6 = result
+  const [currentStep, setCurrentStep] = useState(0) // 0=intro, 1-5=questions, 6=email, 7=result
   const [answers, setAnswers] = useState<Answers>({})
   const [transitionKey, setTransitionKey] = useState(0)
+
+  // Handoff state — populated after Supabase write
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [quizId, setQuizId] = useState<string | null>(null)
+  const [canonicalId, setCanonicalId] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const totalSteps = 5
 
@@ -106,13 +115,12 @@ export default function QuizPage() {
         [stepKey]: value,
       }))
 
-      // Advance to next step with animation
       setTimeout(() => {
         setTransitionKey((k) => k + 1)
         if (currentStep < totalSteps) {
           setCurrentStep((s) => s + 1)
         } else {
-          setCurrentStep(6) // result
+          setCurrentStep(6) // email capture
         }
       }, 120)
     },
@@ -126,9 +134,62 @@ export default function QuizPage() {
 
   const handleRetake = useCallback(() => {
     setAnswers({})
+    setSessionId(null)
+    setQuizId(null)
+    setCanonicalId(null)
+    setSubmitError(null)
     setTransitionKey((k) => k + 1)
     setCurrentStep(0)
   }, [])
+
+  const handleEmailSubmit = useCallback(
+    async (email: string) => {
+      if (!answers.step1) return
+
+      setIsSubmitting(true)
+      setSubmitError(null)
+
+      try {
+        const quizResponses = [
+          { questionId: 'q1', optionId: answers.step1 },
+          { questionId: 'q2', optionId: answers.step2 },
+          { questionId: 'q3', optionId: answers.step3 },
+          { questionId: 'q4', optionId: answers.step4 },
+          { questionId: 'q5', optionId: answers.step5 },
+        ].filter((r) => r.optionId !== undefined) as Array<{ questionId: string; optionId: string }>
+
+        const res = await fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            archetypeKey: answers.step1,
+            answers: quizResponses,
+          }),
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          setSubmitError(data.error ?? 'Something went wrong. Try again.')
+          setIsSubmitting(false)
+          return
+        }
+
+        setSessionId(data.session_id)
+        setQuizId(data.quiz_id)
+        setCanonicalId(data.archetype_name)
+
+        setTransitionKey((k) => k + 1)
+        setCurrentStep(7) // result
+      } catch {
+        setSubmitError('Network error. Please try again.')
+      } finally {
+        setIsSubmitting(false)
+      }
+    },
+    [answers]
+  )
 
   const archetype = answers.step1 ? ARCHETYPES[answers.step1] : null
 
@@ -147,7 +208,6 @@ export default function QuizPage() {
           key={transitionKey}
           className="step-enter w-full max-w-[480px] flex flex-col items-center text-center gap-6"
         >
-          {/* Logo mark */}
           <div className="w-14 h-14 rounded-2xl bg-[#00AB4E]/15 border border-[#00AB4E]/30 flex items-center justify-center text-2xl">
             🛍️
           </div>
@@ -193,18 +253,50 @@ export default function QuizPage() {
           >
             Start the quiz →
           </button>
+        </div>
+      </main>
+    )
+  }
 
-          <p className="text-xs text-[#555]">Free · No sign-up required</p>
+  // ── Email capture step ──
+  if (currentStep === 6 && archetype) {
+    return (
+      <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-4 py-12">
+        <div
+          key={transitionKey}
+          className="step-enter w-full max-w-[480px] flex flex-col items-center text-center gap-6"
+        >
+          <p className="text-xs font-medium tracking-widest uppercase text-[#00AB4E]">
+            My Next Thrift
+          </p>
+
+          <div className="flex flex-col gap-2">
+            <p className="text-2xl font-bold text-white">
+              {archetype.name}
+            </p>
+            <p className="text-[#999] text-sm">
+              Your thrift archetype is ready. Save it to get matched.
+            </p>
+          </div>
+
+          <EmailCapture
+            onSubmit={handleEmailSubmit}
+            isSubmitting={isSubmitting}
+            error={submitError}
+          />
         </div>
       </main>
     )
   }
 
   // ── Result screen ──
-  if (currentStep === 6 && archetype) {
+  if (currentStep === 7 && archetype) {
     return (
       <ArchetypeResult
         archetype={archetype}
+        sessionId={sessionId}
+        quizId={quizId}
+        canonicalId={canonicalId}
         onRetake={handleRetake}
         transitionKey={transitionKey}
       />

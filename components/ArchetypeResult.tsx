@@ -5,18 +5,30 @@ import type { Archetype } from '@/lib/archetypes'
 
 interface ArchetypeResultProps {
   archetype: Archetype
+  sessionId: string | null
+  quizId: string | null
+  canonicalId: string | null
   onRetake: () => void
   transitionKey: number
 }
 
-const APP_STORE_URL = '#' // placeholder — swap for real App Store link
+// TODO: replace with real App Store URL once published
+const APP_STORE_URL = 'https://apps.apple.com/app/my-next-thrift'
 
 export default function ArchetypeResult({
   archetype,
+  sessionId,
+  quizId,
+  canonicalId,
   onRetake,
   transitionKey,
 }: ArchetypeResultProps) {
   const [copied, setCopied] = useState(false)
+
+  // Build the deep link using values returned from the API submit
+  const deepLink = sessionId && quizId && canonicalId
+    ? `mynextthrift://open?archetype_name=${encodeURIComponent(canonicalId)}&result_id=${encodeURIComponent(sessionId)}&quiz_id=${encodeURIComponent(quizId)}`
+    : null
 
   const shareText = `I'm a ${archetype.name} — find your thrift archetype on My Next Thrift`
   const shareUrl =
@@ -34,7 +46,6 @@ export default function ArchetypeResult({
         // user cancelled — ignore
       }
     } else {
-      // Fallback: copy link to clipboard
       try {
         await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
         setCopied(true)
@@ -43,6 +54,18 @@ export default function ArchetypeResult({
         // clipboard not available
       }
     }
+  }
+
+  // Building the deep link — show loading while session is being written
+  if (!sessionId) {
+    return (
+      <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-4 py-12">
+        <div className="step-enter w-full max-w-[480px] flex flex-col items-center text-center gap-6">
+          <div className="w-10 h-10 rounded-full border-2 border-[#00AB4E]/30 border-t-[#00AB4E] animate-spin" />
+          <p className="text-[#999] text-sm">Preparing your matches…</p>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -83,12 +106,14 @@ export default function ArchetypeResult({
 
         {/* CTA section */}
         <div className="flex flex-col gap-3 w-full">
-          <a
-            href={APP_STORE_URL}
-            className="cta-pulse w-full py-4 px-6 rounded-2xl bg-[#00AB4E] text-white font-semibold text-base tracking-wide text-center hover:bg-[#00AB4E]/90 active:scale-[0.97] transition-transform block"
-          >
-            Find my pieces →
-          </a>
+          {deepLink && (
+            <a
+              href={deepLink}
+              className="cta-pulse w-full py-4 px-6 rounded-2xl bg-[#00AB4E] text-white font-semibold text-base tracking-wide text-center hover:bg-[#00AB4E]/90 active:scale-[0.97] transition-transform block"
+            >
+              Find my pieces →
+            </a>
+          )}
 
           <button
             onClick={handleShare}
@@ -105,7 +130,7 @@ export default function ArchetypeResult({
           </button>
         </div>
 
-        {/* App store badges row */}
+        {/* App store fallback */}
         <div className="flex flex-col items-center gap-2 mt-2">
           <p className="text-xs text-[#555]">Available on iOS</p>
           <a
