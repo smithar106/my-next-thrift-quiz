@@ -25,19 +25,11 @@ interface Question {
 const QUESTIONS: Question[] = [
   {
     id: 1,
-    heading: 'What kind of treasure hunter is your style?',
-    layout: 'chips',
+    heading: 'When you find a piece that\'s exactly right — how does it feel?',
+    layout: 'two-cards',
     options: [
-      { label: '🗝️ Archive Hunter', value: 'archive-hunter' },
-      { label: '🎒 Streetwear Scavenger', value: 'streetwear-scavenger' },
-      { label: '🧥 Quiet Luxury Thrifter', value: 'quiet-luxury' },
-      { label: '🧳 Eclectic Curator', value: 'eclectic-curator' },
-      { label: '💎 Hidden Gem Collector', value: 'hidden-gem' },
-      { label: '🧭 Downtown Treasure Hunter', value: 'downtown-treasure' },
-      { label: '🪞 Romantic Relic Finder', value: 'romantic-relic' },
-      { label: '🪙 Designer Score Seeker', value: 'designer-score' },
-      { label: '🏷️ Off-Duty Scavenger', value: 'off-duty-scavenger' },
-      { label: '📐 The Sharp Archive', value: 'sharp-archive' },
+      { label: '🗝️ Like it was waiting for me', value: 'archive-hunter' },
+      { label: '⚡ Like I found it before anyone else', value: 'streetwear-scavenger' },
     ],
   },
   {
@@ -222,7 +214,7 @@ export default function QuizPage() {
               archetype
             </h1>
             <p className="text-[#999] text-base leading-relaxed max-w-[340px] mx-auto">
-              5 quick questions. One identity. The secondhand pieces that belong to you.
+              React to 5 things. We figure out the rest. The pieces that belong to you.
             </p>
           </div>
 
@@ -231,7 +223,7 @@ export default function QuizPage() {
               <span className="w-5 h-5 rounded-full bg-[#00AB4E]/15 border border-[#00AB4E]/40 flex items-center justify-center text-xs text-[#00AB4E]">
                 ✓
               </span>
-              5 steps, under 60 seconds
+              5 reactions, under 60 seconds
             </div>
             <div className="flex items-center gap-3 text-sm text-[#DDD]">
               <span className="w-5 h-5 rounded-full bg-[#00AB4E]/15 border border-[#00AB4E]/40 flex items-center justify-center text-xs text-[#00AB4E]">
