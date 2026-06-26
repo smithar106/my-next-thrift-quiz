@@ -104,6 +104,64 @@ export default function ArchetypeResult({
         {/* Divider */}
         <div className="w-full h-px bg-white/8" />
 
+        {/* Blurred fit reveal */}
+        <div className="w-full flex flex-col items-center gap-4 p-6 rounded-3xl border border-[#00AB4E]/20 bg-[#00AB4E]/5">
+          <p className="text-[10px] font-bold tracking-[2px] uppercase text-[#00AB4E]">
+            Your first fit is waiting
+          </p>
+
+          {/* Blurred fit placeholder */}
+          <div className="relative" style={{ width: 160, height: 200 }}>
+            <div
+              style={{
+                width: 160,
+                height: 200,
+                borderRadius: 16,
+                background: 'linear-gradient(135deg, rgba(0,171,78,0.18) 0%, rgba(0,171,78,0.06) 100%)',
+                border: '1px solid rgba(0,171,78,0.25)',
+                filter: 'blur(6px)',
+                transform: 'scale(1.05)',
+              }}
+            />
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ fontSize: 28 }}
+            >
+              🔒
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1 text-center">
+            <p className="text-white text-lg font-extrabold leading-snug tracking-tight">
+              We found pieces that match your eye.
+            </p>
+            <p className="text-[#999] text-sm leading-relaxed">
+              See your <span className="text-white font-semibold">{archetype.name}</span> collection — free.
+            </p>
+          </div>
+
+          {/* Primary CTA */}
+          {deepLink ? (
+            <a
+              href={deepLink}
+              className="w-full py-4 px-6 rounded-2xl bg-[#00AB4E] text-white font-bold text-base tracking-wide text-center active:scale-[0.97] transition-transform block"
+              style={{ boxShadow: '0 4px 24px rgba(0,171,78,0.35)' }}
+            >
+              See my fits — free →
+            </a>
+          ) : (
+            <a
+              href={APP_STORE_URL}
+              className="w-full py-4 px-6 rounded-2xl bg-[#00AB4E] text-white font-bold text-base tracking-wide text-center active:scale-[0.97] transition-transform block"
+              style={{ boxShadow: '0 4px 24px rgba(0,171,78,0.35)' }}
+            >
+              See my fits — free →
+            </a>
+          )}
+
+          <p className="text-[#555] text-xs">Free to explore · No commitment</p>
+        </div>
+
         {/* CTA section */}
         <div className="flex flex-col gap-3 w-full">
           {deepLink && (
