@@ -7,6 +7,116 @@ import ArchetypeResult from '@/components/ArchetypeResult'
 import { ARCHETYPES, type ArchetypeKey } from '@/lib/archetypes'
 import { getCanonicalId, getDominantSignals } from '@/lib/handoff'
 
+// ─── Scoring engine ───────────────────────────────────────────────────────────
+
+type ArchetypeScore = {
+  'archive-hunter': number
+  'streetwear-scavenger': number
+  'quiet-luxury': number
+  'eclectic-curator': number
+  'hidden-gem': number
+  'downtown-treasure': number
+  'romantic-relic': number
+  'designer-score': number
+  'off-duty-scavenger': number
+  'sharp-archive': number
+}
+
+const EMPTY_SCORES = (): ArchetypeScore => ({
+  'archive-hunter': 0,
+  'streetwear-scavenger': 0,
+  'quiet-luxury': 0,
+  'eclectic-curator': 0,
+  'hidden-gem': 0,
+  'downtown-treasure': 0,
+  'romantic-relic': 0,
+  'designer-score': 0,
+  'off-duty-scavenger': 0,
+  'sharp-archive': 0,
+})
+
+// Per-answer score contributions
+const ANSWER_SCORES: Record<string, Partial<ArchetypeScore>> = {
+  // Q1 — initial archetype lean
+  'archive-hunter':       { 'archive-hunter': 3, 'sharp-archive': 1 },
+  'streetwear-scavenger': { 'streetwear-scavenger': 3, 'eclectic-curator': 1 },
+
+  // Q2 — material
+  'raw':     { 'archive-hunter': 2, 'streetwear-scavenger': 1, 'off-duty-scavenger': 1 },
+  'refined': { 'quiet-luxury': 3, 'sharp-archive': 2, 'designer-score': 1 },
+
+  // Q3 — era (new question)
+  'era_y2k':      { 'streetwear-scavenger': 3, 'eclectic-curator': 2 },
+  'era_90s':      { 'streetwear-scavenger': 2, 'off-duty-scavenger': 2, 'archive-hunter': 1 },
+  'era_80s':      { 'eclectic-curator': 2, 'sharp-archive': 2, 'archive-hunter': 1 },
+  'era_70s':      { 'romantic-relic': 3, 'eclectic-curator': 2 },
+  'era_timeless': { 'archive-hunter': 3, 'sharp-archive': 2, 'quiet-luxury': 1 },
+  'era_mix':      { 'eclectic-curator': 3, 'downtown-treasure': 1 },
+
+  // Q4 — palette (was Q3)
+  'dark':  { 'archive-hunter': 2, 'sharp-archive': 2, 'quiet-luxury': 1 },
+  'light': { 'romantic-relic': 2, 'eclectic-curator': 2, 'off-duty-scavenger': 1 },
+
+  // Q5 — score type (was Q4)
+  'everyday': { 'off-duty-scavenger': 3, 'hidden-gem': 2, 'downtown-treasure': 1 },
+  'luxury':   { 'designer-score': 3, 'quiet-luxury': 2, 'sharp-archive': 1 },
+
+  // Q6 — what are you hunting (was Q5)
+  'forever':  { 'archive-hunter': 3, 'sharp-archive': 2 },
+  'budget':   { 'hidden-gem': 3, 'downtown-treasure': 2, 'off-duty-scavenger': 1 },
+  'vintage':  { 'romantic-relic': 2, 'eclectic-curator': 2, 'archive-hunter': 2 },
+  'designer': { 'designer-score': 3, 'quiet-luxury': 2 },
+}
+
+// Tiebreak order — first in list wins ties
+const TIEBREAK_ORDER: Array<keyof ArchetypeScore> = [
+  'archive-hunter',
+  'quiet-luxury',
+  'streetwear-scavenger',
+  'designer-score',
+  'eclectic-curator',
+  'sharp-archive',
+  'hidden-gem',
+  'romantic-relic',
+  'downtown-treasure',
+  'off-duty-scavenger',
+]
+
+function computeArchetype(answers: Answers): ArchetypeKey {
+  const scores = EMPTY_SCORES()
+
+  // Tally all answers
+  const allValues = [
+    answers.step1,
+    answers.step2,
+    answers.step3_era,
+    answers.step4,
+    answers.step5,
+    answers.step6,
+  ].filter(Boolean) as string[]
+
+  for (const value of allValues) {
+    const contribution = ANSWER_SCORES[value]
+    if (!contribution) continue
+    for (const [key, pts] of Object.entries(contribution)) {
+      scores[key as keyof ArchetypeScore] += pts ?? 0
+    }
+  }
+
+  // Find winner with tiebreak
+  let best: keyof ArchetypeScore = TIEBREAK_ORDER[0]
+  let bestScore = scores[best]
+
+  for (const key of TIEBREAK_ORDER) {
+    if (scores[key] > bestScore) {
+      bestScore = scores[key]
+      best = key
+    }
+  }
+
+  return best as ArchetypeKey
+}
+
 // ─── Quiz questions ───────────────────────────────────────────────────────────
 
 interface Option {
@@ -43,6 +153,20 @@ const QUESTIONS: Question[] = [
   },
   {
     id: 3,
+    heading: 'What era speaks to your eye?',
+    subheading: 'This shapes which pieces we pull for you.',
+    layout: 'four-cards',
+    options: [
+      { label: '📼 Y2K', value: 'era_y2k' },
+      { label: '🎒 90s', value: 'era_90s' },
+      { label: '🕹️ 80s', value: 'era_80s' },
+      { label: '🌻 70s', value: 'era_70s' },
+      { label: '🏛️ Timeless', value: 'era_timeless' },
+      { label: '🎲 Mix it up', value: 'era_mix' },
+    ],
+  },
+  {
+    id: 4,
     heading: 'What palette pulls your eye?',
     layout: 'two-cards',
     options: [
@@ -51,7 +175,7 @@ const QUESTIONS: Question[] = [
     ],
   },
   {
-    id: 4,
+    id: 5,
     heading: 'What kind of score are you hunting?',
     layout: 'two-cards',
     options: [
@@ -60,7 +184,7 @@ const QUESTIONS: Question[] = [
     ],
   },
   {
-    id: 5,
+    id: 6,
     heading: 'What are you hunting for right now?',
     layout: 'four-cards',
     options: [
@@ -75,11 +199,12 @@ const QUESTIONS: Question[] = [
 // ─── Quiz answers state ───────────────────────────────────────────────────────
 
 interface Answers {
-  step1?: ArchetypeKey
-  step2?: string
-  step3?: string
-  step4?: string
-  step5?: string
+  step1?: ArchetypeKey  // Q1 archetype lean
+  step2?: string        // Q2 material
+  step3_era?: string    // Q3 era (new)
+  step4?: string        // Q4 palette
+  step5?: string        // Q5 score type
+  step6?: string        // Q6 hunting
 }
 
 // ─── Page component ───────────────────────────────────────────────────────────
@@ -96,17 +221,21 @@ export default function QuizPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const totalSteps = 5
+  const totalSteps = 6
+
+  const STEP_KEYS: Record<number, keyof Answers> = {
+    1: 'step1',
+    2: 'step2',
+    3: 'step3_era',
+    4: 'step4',
+    5: 'step5',
+    6: 'step6',
+  }
 
   const handleAnswer = useCallback(
     (value: string) => {
-      const stepKey = `step${currentStep}` as keyof Answers
-
-      setAnswers((prev) => ({
-        ...prev,
-        [stepKey]: value,
-      }))
-
+      const stepKey = STEP_KEYS[currentStep]
+      setAnswers((prev) => ({ ...prev, [stepKey]: value }))
       setTimeout(() => {
         setTransitionKey((k) => k + 1)
         if (currentStep < totalSteps) {
@@ -145,9 +274,10 @@ export default function QuizPage() {
         const quizResponses = [
           { questionId: 'q1', optionId: answers.step1 },
           { questionId: 'q2', optionId: answers.step2 },
-          { questionId: 'q3', optionId: answers.step3 },
+          { questionId: 'q3', optionId: answers.step3_era },
           { questionId: 'q4', optionId: answers.step4 },
           { questionId: 'q5', optionId: answers.step5 },
+          { questionId: 'q6', optionId: answers.step6 },
         ].filter((r) => r.optionId !== undefined) as Array<{ questionId: string; optionId: string }>
 
         const res = await fetch('/api/submit', {
@@ -155,7 +285,7 @@ export default function QuizPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email,
-            archetypeKey: answers.step1,
+            archetypeKey: computeArchetype(answers),
             answers: quizResponses,
           }),
         })
@@ -183,7 +313,7 @@ export default function QuizPage() {
     [answers]
   )
 
-  const archetype = answers.step1 ? ARCHETYPES[answers.step1] : null
+  const archetype = Object.values(answers).some(Boolean) ? ARCHETYPES[computeArchetype(answers)] : null
 
   const progress =
     currentStep > 0 && currentStep <= totalSteps

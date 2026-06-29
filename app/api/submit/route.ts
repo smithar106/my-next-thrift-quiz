@@ -4,7 +4,7 @@ import { getCanonicalId, getDominantSignals } from '@/lib/handoff'
 import type { ArchetypeKey } from '@/lib/archetypes'
 
 export interface SubmitRequest {
-  email: string
+  email?: string | null
   archetypeKey: ArchetypeKey
   answers: Array<{ questionId: string; optionId: string }>
 }
@@ -12,10 +12,6 @@ export interface SubmitRequest {
 export async function POST(request: Request) {
   try {
     const body: SubmitRequest = await request.json()
-
-    if (!body.email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
-    }
 
     if (!body.archetypeKey) {
       return NextResponse.json({ error: 'Archetype key is required' }, { status: 400 })
