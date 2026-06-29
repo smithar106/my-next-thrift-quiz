@@ -325,56 +325,54 @@ export default function QuizPage() {
   // ── Intro screen ──
   if (currentStep === 0) {
     return (
-      <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-4 py-12">
-        <div
-          key={transitionKey}
-          className="step-enter w-full max-w-[480px] flex flex-col items-center text-center gap-6"
-        >
-          <div className="w-14 h-14 rounded-2xl bg-[#00AB4E]/15 border border-[#00AB4E]/30 flex items-center justify-center text-2xl">
+      <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-6">
+        <div key={transitionKey} className="step-enter w-full max-w-[440px] flex flex-col items-center text-center gap-8">
+
+          {/* Icon */}
+          <div className="w-16 h-16 rounded-2xl bg-[#00AB4E]/10 border border-[#00AB4E]/20 flex items-center justify-center text-3xl">
             🛍️
           </div>
 
+          {/* Copy */}
           <div className="flex flex-col gap-3">
-            <p className="text-sm font-medium tracking-widest uppercase text-[#00AB4E]">
+            <p className="text-[#00AB4E] text-xs font-bold tracking-[0.2em] uppercase">
               My Next Thrift
             </p>
-            <h1 className="text-3xl font-bold text-white leading-tight">
-              Find your thrift
-              <br />
-              archetype
+            <h1 className="text-4xl font-extrabold text-white leading-tight tracking-tight">
+              Find your thrift<br />archetype
             </h1>
-            <p className="text-[#999] text-base leading-relaxed max-w-[340px] mx-auto">
-              React to 5 things. We figure out the rest. The pieces that belong to you.
+            <p className="text-[#999] text-base leading-relaxed max-w-[320px] mx-auto">
+              6 reactions. We figure out which vintage pieces belong to you.
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 w-full max-w-[320px]">
-            <div className="flex items-center gap-3 text-sm text-[#DDD]">
-              <span className="w-5 h-5 rounded-full bg-[#00AB4E]/15 border border-[#00AB4E]/40 flex items-center justify-center text-xs text-[#00AB4E]">
-                ✓
-              </span>
-              5 reactions, under 60 seconds
-            </div>
-            <div className="flex items-center gap-3 text-sm text-[#DDD]">
-              <span className="w-5 h-5 rounded-full bg-[#00AB4E]/15 border border-[#00AB4E]/40 flex items-center justify-center text-xs text-[#00AB4E]">
-                ✓
-              </span>
-              10 distinct thrift archetypes
-            </div>
-            <div className="flex items-center gap-3 text-sm text-[#DDD]">
-              <span className="w-5 h-5 rounded-full bg-[#00AB4E]/15 border border-[#00AB4E]/40 flex items-center justify-center text-xs text-[#00AB4E]">
-                ✓
-              </span>
-              Curated pieces matched to your eye
-            </div>
+          {/* Trust bullets */}
+          <div className="flex flex-col gap-2.5 w-full max-w-[280px]">
+            {[
+              'Under 60 seconds',
+              '10 distinct thrift archetypes',
+              'Era-matched pieces, curated for you',
+            ].map(item => (
+              <div key={item} className="flex items-center gap-3 text-sm text-[#CCC]">
+                <span className="w-5 h-5 rounded-full bg-[#00AB4E]/15 border border-[#00AB4E]/30 flex items-center justify-center text-xs text-[#00AB4E] flex-shrink-0">✓</span>
+                {item}
+              </div>
+            ))}
           </div>
 
+          {/* CTA */}
           <button
             onClick={handleStart}
-            className="cta-pulse w-full max-w-[320px] py-4 px-6 rounded-2xl bg-[#00AB4E] text-white font-semibold text-base tracking-wide hover:bg-[#00AB4E]/90 active:scale-[0.97] transition-transform"
+            className="cta-pulse w-full max-w-[320px] py-4 px-6 rounded-2xl bg-[#00AB4E] text-white font-bold text-base tracking-wide hover:bg-[#00AB4E]/90 active:scale-[0.97] transition-all"
           >
-            Start the quiz →
+            Find my archetype →
           </button>
+
+          {/* Legal */}
+          <div className="flex gap-4 text-xs text-[#444]">
+            <a href="/privacy" className="hover:text-[#666] transition-colors">Privacy</a>
+            <a href="/terms" className="hover:text-[#666] transition-colors">Terms</a>
+          </div>
         </div>
       </main>
     )
