@@ -5,7 +5,6 @@ import QuizStep from '@/components/QuizStep'
 import EmailCapture from '@/components/EmailCapture'
 import ArchetypeResult from '@/components/ArchetypeResult'
 import { ARCHETYPES, type ArchetypeKey } from '@/lib/archetypes'
-import { getCanonicalId, getDominantSignals } from '@/lib/handoff'
 
 // ─── Scoring engine ───────────────────────────────────────────────────────────
 
@@ -210,7 +209,7 @@ interface Answers {
 // ─── Page component ───────────────────────────────────────────────────────────
 
 export default function QuizPage() {
-  const [currentStep, setCurrentStep] = useState(0) // 0=intro, 1-5=questions, 6=email, 7=result
+  const [currentStep, setCurrentStep] = useState(0) // 0=intro, 1-6=questions, 7=email, 8=result
   const [answers, setAnswers] = useState<Answers>({})
   const [transitionKey, setTransitionKey] = useState(0)
 
@@ -241,7 +240,7 @@ export default function QuizPage() {
         if (currentStep < totalSteps) {
           setCurrentStep((s) => s + 1)
         } else {
-          setCurrentStep(6) // email capture
+          setCurrentStep(7) // email capture
         }
       }, 120)
     },
@@ -303,7 +302,7 @@ export default function QuizPage() {
         setCanonicalId(data.archetype_name)
 
         setTransitionKey((k) => k + 1)
-        setCurrentStep(7) // result
+        setCurrentStep(8) // result
       } catch {
         setSubmitError('Network error. Please try again.')
       } finally {
@@ -379,7 +378,7 @@ export default function QuizPage() {
   }
 
   // ── Email capture step ──
-  if (currentStep === 6 && archetype) {
+  if (currentStep === 7 && archetype) {
     return (
       <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-4 py-12">
         <div
@@ -410,7 +409,7 @@ export default function QuizPage() {
   }
 
   // ── Result screen ──
-  if (currentStep === 7 && archetype) {
+  if (currentStep === 8 && archetype) {
     return (
       <ArchetypeResult
         archetype={archetype}
@@ -423,7 +422,7 @@ export default function QuizPage() {
     )
   }
 
-  // ── Quiz steps 1–5 ──
+  // ── Quiz steps 1–6 ──
   const question = QUESTIONS[currentStep - 1]
   if (!question) return null
 
